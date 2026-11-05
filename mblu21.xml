@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<manifest>
+  <remote name="tickernelz" fetch="https://github.com/tickernelz" />
+
+  <project path="device/meizu/mblu21" name="android_device_meizu_mblu21" remote="tickernelz" revision="seventeen" />
+  <project path="vendor/meizu/mblu21" name="android_vendor_meizu_mblu21" remote="tickernelz" revision="lineage-24.0" />
+  <project path="kernel/meizu/ums9230" name="android_kernel_meizu_ums9230" remote="tickernelz" revision="lineage-24.0" />
+  <project path="kernel/meizu/ums9230-modules" name="android_kernel_meizu_ums9230-modules" remote="tickernelz" revision="lineage-24.0" />
+</manifest>
