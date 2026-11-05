@@ -2,7 +2,7 @@
 
 Build files for an unofficial [PixelOS](https://pixelos.net) 17 (Android 17, `CP2A.260605.016`) for the Meizu mBlu 21 (`mblu21`, Unisoc UMS9230, stock vendor Android 13, GKI 5.15). Google apps are part of PixelOS; no add-on is needed.
 
-**Status:** in daily use on one M416H since 2026-11-05 (build `20261105-1507`). What works, what is open and what was not tested yet: [Known issues](#known-issues). Every release with its date and measured results: [Release history](#release-history).
+**Status:** installed on one M416H since 2026-11-05 (build `20261105-1507`), boots with SELinux enforcing. No period of daily use has been recorded yet. What works, what is open and what was not tested yet: [Known issues](#known-issues). Every release with its date and measured results: [Release history](#release-history).
 
 ## Sources
 
@@ -20,7 +20,7 @@ The `seventeen` device branch differs from `lineage-24.0` in three ways:
 - `system`, `system_ext` and `product` are erofs, as on stock. Google apps add about 2.5 GB; with ext4 the `group_unisoc` super group (5296 MiB) would overflow. This build uses 3789 MiB of it.
 - `TARGET_SCREEN_WIDTH := 720` and the Unisoc face HAL stays the face provider (`TARGET_PROVIDES_FACE_UNLOCK_HAL := true`).
 
-The kernel modules, DTB and DTBO are built from `kernel/meizu/ums9230` and `kernel/meizu/ums9230-modules`. The `boot` image stays stock: it carries the `Image` of Google GKI build `12096863` (`android13-5.15`) byte for byte, because the bootloader verifies `boot` against Meizu's key and a `boot` built from source does not start. See the device tree's [Layout](https://github.com/tickernelz/android_device_meizu_mblu21/tree/seventeen#layout).
+The kernel modules, DTB and DTBO are built from `kernel/meizu/ums9230` and `kernel/meizu/ums9230-modules`. The `boot` image stays stock: it carries the `Image` of Google GKI build `12096863` (`android13-5.15`) byte for byte, because a `boot` built from source has not started on this phone. The bootloader, although unlocked, boots only the Meizu-signed `vbmeta`, which chains `boot` to Meizu's key `d46eb3be`; a `boot` built from source (2026-11-03) stopped at the Meizu logo with an empty pstore. Whether the bootloader rejected it or the kernel failed early was not isolated. See the device tree's [Layout](https://github.com/tickernelz/android_device_meizu_mblu21/tree/seventeen#layout).
 
 ### Source patches
 
@@ -68,11 +68,11 @@ The zip is an A/B OTA signed with the builder's own release key. The phone keeps
 
 ## Root
 
-KernelSU in LKM mode, the method proven on LineageOS src4: patch this build's `init_boot.img` (also a release asset) with `ksud boot-patch -b init_boot.img -o <directory>` (SukiSU Ultra 4.3.0, KMI `android13-5.15`), write the result to `init_boot_<slot>`, then install the `susfs_guard_lkm` module. A built-in KernelSU kernel cannot ship: the bootloader keeps `boot` verified against Meizu's key.
+KernelSU in LKM mode, the method proven on LineageOS src4: patch this build's `init_boot.img` (also a release asset) with `ksud boot-patch -b init_boot.img -o <directory>` (SukiSU Ultra 4.3.0, KMI `android13-5.15`), write the result to `init_boot_<slot>`, then install the `susfs_guard_lkm` module. A built-in KernelSU kernel does not ship, because no `boot` built from source has started on this phone yet (see [Sources](#sources)).
 
 ## Known issues
 
-State on build `20261105-1507` unless a row names another build. A row that says "not tested" has not been checked on PixelOS yet.
+State on build `20261105-1507` unless a row names another build. A row that says "not tested" has not been checked on PixelOS yet, and an area without a row has not been tested on PixelOS; LineageOS 24.0 results for the same vendor, kernel and modules are in the device tree's [Status](https://github.com/tickernelz/android_device_meizu_mblu21/tree/seventeen#status).
 
 | Area | State | Evidence |
 |---|---|---|
@@ -80,12 +80,15 @@ State on build `20261105-1507` unless a row names another build. A row that says
 | Navigation in the setup wizard | fixed in the tree, first boot not checked | gesture navigation is the default (`androidboot.vendor.overlay.theme` in `/proc/bootconfig`); with three-button navigation the wizard showed only a back button on build 1118. Not yet seen on a first boot after Format data |
 | Display 90 Hz | works | 90 Hz by default; the Smooth display switch caps it at 60 Hz |
 | GPS | not tested outdoors | the Unisoc UMW2652 GNSS HAL runs and network location works; no satellite fix has been recorded yet |
-| Bluetooth | turns on; pairing not tested | |
+| Bluetooth | not tested | the stack runs in BLE-only mode (`BLE_ON`, classic Bluetooth off, 0 bonded devices); turning Bluetooth on and pairing were not tested |
 | Headset jack | not tested | the `Headset Jack` input device supports the headphone and microphone insert switches; no headset was plugged in |
-| SD card | not tested | no card inserted |
+| SD card | not tested | no SD volume appeared; whether a card was inserted was not checked |
 | Battery | one report, not repeated | build 1118 reported `health=overheat` once at 42.9 °C; later `health=Good` at 38.8 °C. Battery life not measured |
 | Calls and SMS | not tested on PixelOS | work on LineageOS 24.0 with the same vendor, kernel and modules (2026-11-03) |
-| VoLTE | network limitation | Telkomsel reports IMS voice over PS not supported (`mVopsSupport = 3`), as on stock |
+| Camera | opens; photo and video not tested on PixelOS | the camera app opens on build 1507 |
+| Audio | not tested | earpiece and speaker output routes present (3 outputs, 4 inputs); playback, calls and recording not tested |
+| Wi-Fi, touch, MTP, sensors | work | Wi-Fi 5 GHz connected, touch, MTP, 49 sensors listed |
+| VoLTE | network limitation | measured on build 1118 and on LineageOS 24.0: Telkomsel reports IMS voice over PS not supported (`mVopsSupport = 3`), as on stock |
 | Fingerprint, face unlock | not tested | both HALs run; nothing enrolled. The fingerprint sensor of the test phone is broken in hardware |
 
 ## Release history
@@ -95,11 +98,11 @@ Play Integrity results are raw verdicts from a Play Integrity checker app on the
 | Date (UTC) | Release | Device commit | On hardware | Play Integrity (measured) |
 |---|---|---|---|---|
 | 2026-11-05 | [`PixelOS-17.0-20261105-UNOFFICIAL-mblu21`](https://github.com/tickernelz/pixelos_build_mblu21/releases/tag/PixelOS-17.0-20261105-UNOFFICIAL-mblu21) (build 1118) | [`968c58b`](https://github.com/tickernelz/android_device_meizu_mblu21/commit/968c58bbca18c3000daf8442903b91759a4bc457) | published before testing; installed and booted later the same day | not measured |
-| 2026-11-05 | [`PixelOS-17.0-20261105-1507-UNOFFICIAL-mblu21`](https://github.com/tickernelz/pixelos_build_mblu21/releases/tag/PixelOS-17.0-20261105-1507-UNOFFICIAL-mblu21) | [`5fc7dc0`](https://github.com/tickernelz/android_device_meizu_mblu21/commit/5fc7dc073cdda895566368058e57d3fdbe3ecb65) | boots, SELinux enforcing; see [release notes](docs/release-notes.md) | with KernelSU LKM, TrickyStore 1.4.1 and Play Integrity Fix v19: `deviceRecognitionVerdict: ["MEETS_BASIC_INTEGRITY"]`, `appRecognitionVerdict: PLAY_RECOGNIZED`, `appLicensingVerdict: LICENSED` on 3 consecutive boots. Without root: not measured |
+| 2026-11-05 | [`PixelOS-17.0-20261105-1507-UNOFFICIAL-mblu21`](https://github.com/tickernelz/pixelos_build_mblu21/releases/tag/PixelOS-17.0-20261105-1507-UNOFFICIAL-mblu21) | [`5fc7dc0`](https://github.com/tickernelz/android_device_meizu_mblu21/commit/5fc7dc073cdda895566368058e57d3fdbe3ecb65) | boots, SELinux enforcing; see [release notes](docs/release-notes.md) | with KernelSU LKM, Tricky Store 1.4.1, Play Integrity Fix v19 and Tricky Store's built-in software keybox: `deviceRecognitionVerdict: ["MEETS_BASIC_INTEGRITY"]`, `appRecognitionVerdict: PLAY_RECOGNIZED`, `appLicensingVerdict: LICENSED` on 2 consecutive boots. The same verdicts on 3 consecutive boots with a third-party ecdsa-only keybox instead. Without root: not measured |
 
 ## Credits and AI assistance
 
-Sources and credits are listed in the device tree's [Credits](https://github.com/tickernelz/android_device_meizu_mblu21/tree/seventeen#credits). Most of this repository and the device and kernel trees were written with AI coding assistants (LLM agents) at Zhafron's direction and tested on his phone; see [History and AI assistance](https://github.com/tickernelz/android_device_meizu_mblu21/tree/seventeen#history-and-ai-assistance).
+Sources and credits are listed in the device tree's [Credits](https://github.com/tickernelz/android_device_meizu_mblu21/tree/seventeen#credits). Most of this repository, the device tree and the mblu21 commits on top of the imported kernel sources (8 in `android_kernel_meizu_ums9230`, the import and fix commits in `android_kernel_meizu_ums9230-modules`) were written with AI coding assistants (LLM agents) at Zhafron's direction and tested on his phone; see [History and AI assistance](https://github.com/tickernelz/android_device_meizu_mblu21/tree/seventeen#history-and-ai-assistance).
 
 ## License
 
