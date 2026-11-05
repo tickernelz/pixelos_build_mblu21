@@ -22,15 +22,6 @@ The `seventeen` device branch differs from `lineage-24.0` in three ways:
 
 The kernel modules, DTB and DTBO are built from `kernel/meizu/ums9230` and `kernel/meizu/ums9230-modules`. The `boot` image stays stock: it carries the `Image` of Google GKI build `12096863` (`android13-5.15`) byte for byte, because a `boot` built from source has not started on this phone. The bootloader, although unlocked, boots only the Meizu-signed `vbmeta`, which chains `boot` to Meizu's key `d46eb3be`; a `boot` built from source (2026-11-03) stopped at the Meizu logo with an empty pstore. Whether the bootloader rejected it or the kernel failed early was not isolated. See the device tree's [Layout](https://github.com/tickernelz/android_device_meizu_mblu21/tree/seventeen#layout).
 
-### Source patches
-
-`build.sh` applies two patches to the PixelOS checkout before building:
-
-| Patch | Change | Effect on the build |
-|---|---|---|
-| [`build_soong-gomemlimit.patch`](patches/build_soong-gomemlimit.patch) | passes `SOONG_GOMEMLIMIT` to `soong_build` as `GOMEMLIMIT` | none: it only lets hosts with less RAM finish the analysis |
-| [`frameworks_av-unlisted-hidden-cameras.patch`](patches/frameworks_av-unlisted-hidden-cameras.patch) | cameraservice adds the camera ids listed in `ro.camera.unlisted_hidden_ids` as hidden secure cameras when the provider does not list them | the Unisoc face HAL can open its face camera, which the stock camera provider does not list; face unlock needs it |
-
 ## Build
 
 Needs about 150 GB for the shallow checkout and 120 GB for `out`, and about 40 GB of RAM plus swap.
@@ -43,7 +34,7 @@ Needs about 150 GB for the shallow checkout and 120 GB for `out`, and about 40 G
     git clone https://github.com/tickernelz/pixelos_build_mblu21 ../pixelos_build_mblu21
     ANDROID_ROOT=$PWD KEYS_DIR=/path/to/keys ../pixelos_build_mblu21/build.sh
 
-`build.sh` applies the two patches in `patches/`, links `KEYS_DIR` into `vendor/lineage-priv/keys`, extracts the proprietary files from the stock `vendor_a.img` (sha256-checked) and runs `breakfast mblu21 userdebug` and `m pixelos`. The output is `out/target/product/mblu21/PixelOS_mblu21-17.0-<date>.zip`.
+`build.sh` builds the PixelOS checkout as synced, without patches: it links `KEYS_DIR` into `vendor/lineage-priv/keys`, extracts the proprietary files from the stock `vendor_a.img` (sha256-checked) and runs `breakfast mblu21 userdebug` and `m pixelos`. The output is `out/target/product/mblu21/PixelOS_mblu21-17.0-<date>.zip`.
 
 - **Keys:** `KEYS_DIR` holds your own `releasekey`, `platform`, `shared`, `media`, `networkstack`, `nfc`, `bluetooth` and `sdk_sandbox` (`.pk8` + `.x509.pem`) and a `keys.mk` with `PRODUCT_DEFAULT_DEV_CERTIFICATE := vendor/lineage-priv/keys/releasekey`. `build.sh` adds the public AOSP `testkey`, which `system/sepolicy` reads for its `[@RELEASE]` tag. Never commit private keys.
 - **Hosts without `libcrypt.so.1`** (Fedora 40 and later): the prebuilt perl in `prebuilts/tools-lineage` needs it for the kernel headers archive. Extract `libxcrypt-compat` without installing it and run the build in a user namespace that overlays it on `/usr/lib64`:
