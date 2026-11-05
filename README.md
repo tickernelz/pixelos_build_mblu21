@@ -42,17 +42,18 @@ Needs about 150 GB for the shallow checkout and 120 GB for `out`, and about 40 G
 
 ## Install
 
-The zip is an A/B OTA signed with the builder's own release key. The phone keeps its stock `boot`, `dtbo` and `vbmeta*`; the OTA writes `init_boot`, `vendor_boot` and the dynamic partitions.
+The zip is an A/B OTA signed with the builder's own release key. The phone keeps its stock `boot`, `dtbo` and `vbmeta*`; the OTA writes `init_boot`, `vendor_boot` and the dynamic partitions. The steps assume LineageOS 24.0 (`src4` or later) is running with a root shell (`adb root` or KernelSU).
 
 1. Join the parts and check them:
 
        cat PixelOS_mblu21-17.0-20261105-1118.zip.part* > PixelOS_mblu21-17.0-20261105-1118.zip
        sha256sum -c SHA256SUMS
 
-2. Boot Lineage Recovery (it lives in `vendor_boot`; from LineageOS: `adb reboot recovery`) and choose **Apply update → Apply from ADB**.
-3. `adb sideload PixelOS_mblu21-17.0-20261105-1118.zip`. Recovery reports *Signature verification failed* because the zip is not signed with a LineageOS key: choose **Yes** to install anyway.
-4. **Factory reset → Format data.** Required when coming from LineageOS or stock: the platform key and the apps change. This erases all user data.
-5. Reboot. The first boot takes several minutes.
+2. Get the PixelOS recovery. LineageOS recovery cannot install this zip: PixelOS sets `ro.debuggable=0`, so the payload metadata signature is mandatory and LineageOS recovery only trusts its own key. From LineageOS, apply the OTA with `update_engine` (Updater, or `service call android.os.UpdateEngineService 1 …` with the payload offset and `payload_properties.txt`). This writes the PixelOS `vendor_boot`, which holds the PixelOS recovery, to the other slot and makes that slot active.
+3. **Do not wipe and do not boot Android yet.** The phone uses Virtual A/B: the dynamic partitions from step 2 are snapshots that only merge after the first successful boot, and a data wipe before that discards them and returns to the old slot. Reboot straight to recovery: `adb reboot recovery`.
+4. In PixelOS recovery choose **Apply update → Apply from ADB** and run `adb sideload PixelOS_mblu21-17.0-20261105-1118.zip`. A sideload writes the partitions directly, without snapshots. `Failed to open /sys/fs/f2fs/features/linear_lookup` is a kernel feature probe, not an error. Wait for `Install completed with status 0`.
+5. **Factory reset → Format data.** Required when coming from LineageOS or stock: the platform key and the apps change. This erases all user data.
+6. **Reboot system now.** The first boot takes several minutes.
 
 ## Root
 
