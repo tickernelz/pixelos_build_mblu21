@@ -11,12 +11,8 @@ KEYS_DIR="${KEYS_DIR:?set KEYS_DIR to the directory holding releasekey, platform
 JOBS="${JOBS:-8}"
 VARIANT="${VARIANT:-userdebug}"
 STOCK_RELEASE_URL="${STOCK_RELEASE_URL:-https://github.com/tickernelz/android_stock_meizu_mblu21/releases/download/mblu21-stock-U01005-20261031}"
-HERE="$(cd "$(dirname "$0")" && pwd)"
 
 cd "${ANDROID_ROOT}"
-
-for p in "${HERE}"/patches/build_soong-*.patch; do git -C build/soong apply "$p"; done
-for p in "${HERE}"/patches/frameworks_av-*.patch; do git -C frameworks/av apply "$p"; done
 
 keys=vendor/lineage-priv/keys
 rm -rf "${keys}"
@@ -36,7 +32,6 @@ printf '%s  %s\n' \
 export USE_CCACHE=1
 export CCACHE_EXEC="${CCACHE_EXEC:-$(command -v ccache)}"
 export SOONG_INCREMENTAL_ANALYSIS=false
-export SOONG_GOMEMLIMIT="${SOONG_GOMEMLIMIT:-12GiB}"
 
 set +u
 source build/envsetup.sh
