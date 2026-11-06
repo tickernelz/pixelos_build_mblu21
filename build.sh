@@ -9,7 +9,7 @@ set -euo pipefail
 ANDROID_ROOT="${ANDROID_ROOT:?set ANDROID_ROOT to the PixelOS seventeen checkout}"
 KEYS_DIR="${KEYS_DIR:?set KEYS_DIR to the directory holding releasekey, platform, shared, media, networkstack, nfc, bluetooth, sdk_sandbox and keys.mk}"
 JOBS="${JOBS:-8}"
-VARIANT="${VARIANT:-userdebug}"
+VARIANT="${VARIANT:-user}"
 STOCK_RELEASE_URL="${STOCK_RELEASE_URL:-https://github.com/tickernelz/android_stock_meizu_mblu21/releases/download/mblu21-stock-U01005-20261031}"
 
 cd "${ANDROID_ROOT}"
