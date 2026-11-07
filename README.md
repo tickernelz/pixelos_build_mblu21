@@ -2,7 +2,7 @@
 
 Build files for an unofficial [PixelOS](https://pixelos.net) 17 (Android 17, `CP2A.260605.016`) for the Meizu mBlu 21 (`mblu21`, Unisoc UMS9230, stock vendor Android 13, GKI 5.15). Google apps are part of PixelOS; no add-on is needed.
 
-**Status:** installed on one M416H since 2026-11-05; build `20261106-1706` (variant `user`) runs on it since 2026-11-07, boots with SELinux enforcing. No period of daily use has been recorded yet. What works, what is open and what was not tested yet: [Known issues](#known-issues). Every release with its date and measured results: [Release history](#release-history).
+**Status:** installed on one M416H since 2026-11-05; build `20261107-1039` (variant `user`) runs on it since 2026-11-07, installed with `update_engine` and followed by a factory reset; the owner tested it by hand the same day (RCS works). Boots with SELinux enforcing. No period of daily use has been recorded yet. What works, what is open and what was not tested yet: [Known issues](#known-issues). Every release with its date and measured results: [Release history](#release-history).
 
 ## Sources
 
@@ -48,16 +48,16 @@ The zip is an A/B OTA signed with the builder's own release key. The phone keeps
 
 1. Join the parts and check them:
 
-       cat PixelOS_mblu21-17.0-20261106-1706.zip.part* > PixelOS_mblu21-17.0-20261106-1706.zip
+       cat PixelOS_mblu21-17.0-20261107-1039.zip.part* > PixelOS_mblu21-17.0-20261107-1039.zip
        sha256sum -c SHA256SUMS
 
 2. Get the PixelOS recovery. LineageOS recovery cannot install this zip: PixelOS sets `ro.debuggable=0`, so the payload metadata signature is mandatory and LineageOS recovery only trusts its own key. From LineageOS, apply the OTA with `update_engine` (Updater, or `service call android.os.UpdateEngineService 1 …` with the payload offset and `payload_properties.txt`). This writes the PixelOS `vendor_boot`, which holds the PixelOS recovery, to the other slot and makes that slot active.
 3. **Do not wipe and do not boot Android yet.** The phone uses Virtual A/B: the dynamic partitions from step 2 are snapshots that only merge after the first successful boot, and a data wipe before that discards them and returns to the old slot. Reboot straight to recovery: `adb reboot recovery`.
-4. In PixelOS recovery choose **Apply update → Apply from ADB** and run `adb sideload PixelOS_mblu21-17.0-20261106-1706.zip`. A sideload writes the partitions directly, without snapshots. `Failed to open /sys/fs/f2fs/features/linear_lookup` is a kernel feature probe, not an error. Wait for `Install completed with status 0`.
+4. In PixelOS recovery choose **Apply update → Apply from ADB** and run `adb sideload PixelOS_mblu21-17.0-20261107-1039.zip`. A sideload writes the partitions directly, without snapshots. `Failed to open /sys/fs/f2fs/features/linear_lookup` is a kernel feature probe, not an error. Wait for `Install completed with status 0`.
 5. **Factory reset → Format data.** Required when coming from LineageOS or stock: the platform key and the apps change. This erases all user data.
 6. **Reboot system now.** The first boot takes several minutes.
 
-Updating from an earlier PixelOS build of this repository: steps 3 and 4 only (`adb reboot sideload`, then `adb sideload` of the new zip), without step 5. Build `20261106-1706` was installed this way over `20261105-1807` with data kept; the sideload took more than 35 minutes and the host progress stayed at `~47%` while the phone wrote the partitions, so do not interrupt it.
+Updating from an earlier PixelOS build of this repository: steps 3 and 4 only (`adb reboot sideload`, then `adb sideload` of the new zip), without step 5. Build `20261106-1706` was installed this way over `20261105-1807` with data kept; the sideload took more than 35 minutes and the host progress stayed at `~47%` while the phone wrote the partitions, so do not interrupt it. Build `20261107-1039` did not install this way on the test phone (the sideload stopped halfway and the old slot booted again); it was installed with `update_engine` from the running system (step 2) and booted, then the phone was factory reset from Settings.
 
 ## Root
 
@@ -85,6 +85,7 @@ State on build `20261106-1706` unless a row names another build. A row that says
 | Audio | speaker and earpiece play | build 1706, 1 kHz tone recorded by the microphone: speaker +58.6/+62.7 dB, earpiece +56.0/+54.8 dB over silence. Calls and headset not tested |
 | Wi-Fi, touch, sensors | work | build 1706: Wi-Fi 5 GHz connected, touch, 53 sensors listed |
 | MTP | not checked on build 1706 | the USB function was `adb` only during testing; MTP worked on build 1507 |
+| RCS | works | build 1039 with Carrier Services as a privileged app: the owner's manual test after the factory reset on 2026-11-07, no adb override; no RCS status code was measured here |
 | VoLTE | network limitation | measured on build 1118 and on LineageOS 24.0: Telkomsel reports IMS voice over PS not supported (`mVopsSupport = 3`), as on stock |
 | Face unlock | enrolment completes | build 1706: the face HAL opens hidden camera 30 from the odm camera provider, enrolment ended with `onEnrollResult(fid=1)` and "Done" in a lit room, 0 SELinux denials. The owner reports unlocking with his face; it was not measured here. In a dark room (1 lux) enrolment times out after 20 s because no face is detected in the frames |
 | Fingerprint | not tested | the HAL runs; the fingerprint sensor of the test phone is broken in hardware |
@@ -100,6 +101,7 @@ Play Integrity results are raw verdicts from a Play Integrity checker app on the
 | 2026-11-05 | [`PixelOS-17.0-20261105-1507-UNOFFICIAL-mblu21`](https://github.com/tickernelz/pixelos_build_mblu21/releases/tag/PixelOS-17.0-20261105-1507-UNOFFICIAL-mblu21) | [`5fc7dc0`](https://github.com/tickernelz/android_device_meizu_mblu21/commit/5fc7dc073cdda895566368058e57d3fdbe3ecb65) | boots, SELinux enforcing; see [release notes](docs/release-notes.md) | with KernelSU LKM, Tricky Store 1.4.1, Play Integrity Fix v19 and Tricky Store's built-in software keybox: `deviceRecognitionVerdict: ["MEETS_BASIC_INTEGRITY"]`, `appRecognitionVerdict: PLAY_RECOGNIZED`, `appLicensingVerdict: LICENSED` on 2 consecutive boots. The same verdicts on 3 consecutive boots with a third-party ecdsa-only keybox instead. Without root: not measured |
 | 2026-11-05 | [`PixelOS-17.0-20261105-1807-UNOFFICIAL-mblu21`](https://github.com/tickernelz/pixelos_build_mblu21/releases/tag/PixelOS-17.0-20261105-1807-UNOFFICIAL-mblu21) | [`220cb65`](https://github.com/tickernelz/android_device_meizu_mblu21/commit/220cb65e9dba1c5493ba5eb0f59c5d5308b15d6c) | boots, SELinux enforcing, 0 non-app denials over boot plus 10 minutes of scripted use; 2026-11-06: boot 50.0/48.9/48.9 s, 0 denials on 3 boots | ROM alone with the SukiSU-Ultra built-in kernel and no module (2026-11-06, 3 boots): `NO_INTEGRITY` each time |
 | 2026-11-07 | [`PixelOS-17.0-20261106-1706-UNOFFICIAL-mblu21-untested`](https://github.com/tickernelz/pixelos_build_mblu21/releases/tag/PixelOS-17.0-20261106-1706-UNOFFICIAL-mblu21-untested) (variant `user`) | [`d496ead`](https://github.com/tickernelz/android_device_meizu_mblu21/commit/d496eadb393c739aa8d2055532de704e0b408cc9) | installed over 1807 without wiping data; boot 47.7/49.0/48.5 s, 0 denials on 3 boots; see [release notes](docs/release-notes.md) | ROM alone, same setup (3 boots): `NO_INTEGRITY` each time, the same as 1807 |
+| 2026-11-07 | [`PixelOS-17.0-20261107-1039-UNOFFICIAL-mblu21`](https://github.com/tickernelz/pixelos_build_mblu21/releases/tag/PixelOS-17.0-20261107-1039-UNOFFICIAL-mblu21) (variant `user`) | [`1fd0032`](https://github.com/tickernelz/android_device_meizu_mblu21/commit/1fd0032620508ebb0f87e06d34b82a606dc1684e) | installed with `update_engine`, then factory reset; owner's manual test: RCS works with Carrier Services as a privileged app | not measured |
 
 ## Credits and AI assistance
 
