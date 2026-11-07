@@ -24,7 +24,7 @@ The kernel modules, DTB and DTBO are built from `kernel/meizu/ums9230` and `kern
 
 ## Build
 
-Needs about 150 GB for the shallow checkout and 120 GB for `out`, and about 40 GB of RAM plus swap. Measured for build 1706 (a full Soong analysis after switching to `user`): without a Go memory limit `soong_build` was killed at 44 GB RAM + 8 GB swap; with `GOMEMLIMIT=34GiB` passed to `soong_build` the build peaked at 41.4 GB RAM + 19 GB swap and took 2 h 13 min on 16 cores. Passing that variable needed a local three-line change to `build/soong/ui/build/soong.go` on the build host (`SOONG_GOMEMLIMIT` → `GOMEMLIMIT` for `soong_build`); it changes only the build tool's memory use, not the ROM.
+Needs about 150 GB for the shallow checkout and 120 GB for `out`, and about 64 GB of RAM plus swap. Measured for build 1706 (a full Soong analysis after switching to `user`): without a Go memory limit `soong_build` was killed at 44 GB RAM + 8 GB swap; with `GOMEMLIMIT=34GiB` passed to `soong_build` the build peaked at 41.4 GB RAM + 19 GB swap and took 2 h 13 min on 16 cores. Passing that variable needs the three-line host change [`docs/soong-gomemlimit.patch`](docs/soong-gomemlimit.patch) to `build/soong` (`SOONG_GOMEMLIMIT` → `GOMEMLIMIT` for `soong_build`): `git -C build/soong apply ../../pixelos_build_mblu21/docs/soong-gomemlimit.patch`, then run `build.sh` with `SOONG_GOMEMLIMIT=34GiB` in the environment. It changes only the build tool's memory use, not the ROM.
 
     mkdir pixelos-17 && cd pixelos-17
     repo init -u https://github.com/PixelOS-AOSP/android_manifest.git -b seventeen --git-lfs --depth=1
