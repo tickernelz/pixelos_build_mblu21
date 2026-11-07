@@ -24,7 +24,7 @@ The kernel modules, DTB and DTBO are built from `kernel/meizu/ums9230` and `kern
 
 ## Build
 
-Needs about 150 GB for the shallow checkout and 120 GB for `out`, and about 40 GB of RAM plus swap.
+Needs about 150 GB for the shallow checkout and 120 GB for `out`, and about 40 GB of RAM plus swap. Measured for build 1706 (a full Soong analysis after switching to `user`): without a Go memory limit `soong_build` was killed at 44 GB RAM + 8 GB swap; with `GOMEMLIMIT=34GiB` passed to `soong_build` the build peaked at 41.4 GB RAM + 19 GB swap and took 2 h 13 min on 16 cores. Passing that variable needed a local three-line change to `build/soong/ui/build/soong.go` on the build host (`SOONG_GOMEMLIMIT` → `GOMEMLIMIT` for `soong_build`); it changes only the build tool's memory use, not the ROM.
 
     mkdir pixelos-17 && cd pixelos-17
     repo init -u https://github.com/PixelOS-AOSP/android_manifest.git -b seventeen --git-lfs --depth=1
@@ -64,7 +64,7 @@ Updating from an earlier PixelOS build of this repository: steps 3 and 4 only (`
 Two ways, both measured on this phone; full steps in [android_kernel_meizu_mblu21 ROOT.md](https://github.com/tickernelz/android_kernel_meizu_mblu21/blob/main/docs/ROOT.md).
 
 - **Built-in kernel (what the test phone runs on build `20261106-1706`):** the `Image` of `boot-sukisu-ultra-kpm` from the `sukisu-ultra-20261106-untested` pre-release, re-signed with your own key against the stock `boot`, written to `boot_<slot>`. SukiSU-Ultra, SUSFS and KPM are in the kernel; no module is needed (`ksud susfs implementation` reports `builtin`). The ROM zip does not touch `boot`, so the kernel stays across ROM updates.
-- **LKM:** patch this build's `init_boot.img` (also a release asset) with `ksud boot-patch -b init_boot.img -o <directory>` (SukiSU Ultra 4.3.0, KMI `android13-5.15`), write the result to `init_boot_<slot>`, then install the `susfs_guard_lkm` module. Every build has a new `init_boot`, so repatch after each update.
+- **LKM:** patch this build's `init_boot.img` (also a release asset) with `ksud boot-patch -b init_boot.img -o <directory>` (SukiSU Ultra 4.3.0, KMI `android13-5.15`), write the result to `init_boot_<slot>`, then install the `susfs_guard_lkm` module. A build whose stock `init_boot` differs needs a new patch: 1507 and 1807 share `738c8151…`, 1706 has `4d9a137f…`.
 
 ## Known issues
 
